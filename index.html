@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DTS Calibration Tool — Silixa XML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg:       #0d0f0e;
+    --bg2:      #131614;
+    --bg3:      #191c1a;
+    --border:   #2a2e2b;
+    --border2:  #363c38;
+    --text:     #e8ede9;
+    --text2:    #8a9e8d;
+    --text3:    #566359;
+    --accent:   #4ade80;
+    --accent2:  #22c55e;
+    --accent-d: #14532d;
+    --accent-t: rgba(74,222,128,0.08);
+    --amber:    #fbbf24;
+    --amber-d:  #451a03;
+    --red:      #f87171;
+    --red-d:    #450a0a;
+    --blue:     #60a5fa;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+    --radius:   6px;
+    --radius-lg:10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-icon svg { width: 14px; height: 14px; }
+  .logo-text { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: 0.02em; }
+  .logo-text span { color: var(--accent); }
+  .header-meta { margin-left: auto; font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 1rem; }
+  .header-tag {
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    padding: 2px 10px;
+    color: var(--text3);
+    font-size: 11px;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+  .nav-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 0.75rem;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 12px;
+    transition: background .15s, color .15s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent-t); color: var(--accent); border-color: rgba(74,222,128,0.2); }
+  .nav-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .nav-num.done { background: var(--accent); border-color: var(--accent); color: #000; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+  .nav-info { font-size: 11px; color: var(--text3); line-height: 1.7; }
+  .nav-info a { color: var(--accent); text-decoration: none; }
+  .nav-info a:hover { text-decoration: underline; }
+
+  /* ── MAIN ── */
+  main { padding: 2.5rem 3rem; max-width: 860px; }
+
+  /* ── SECTION ── */
+  .section {
+    margin-bottom: 2.5rem;
+    animation: fadeup .35s ease both;
+  }
+  @keyframes fadeup { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .section:nth-child(2) { animation-delay: .06s; }
+  .section:nth-child(3) { animation-delay: .12s; }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--text3);
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .section-num.on { border-color: var(--accent); color: var(--accent); }
+  .section-num.ok { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .section-sub { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ── DROP ZONE ── */
+  .drop {
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    background: var(--bg2);
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-t); }
+  .drop.loaded { border-style: solid; border-color: var(--accent); }
+  .drop-icon { margin-bottom: 0.75rem; opacity: 0.5; }
+  .drop-icon svg { width: 32px; height: 32px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+  .drop-label { font-size: 13px; color: var(--text2); }
+  .drop-label b { color: var(--text); font-weight: 500; }
+  .drop-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* ── FILE TREE ── */
+  .filetree {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    max-height: 140px;
+    overflow-y: auto;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .filetree::-webkit-scrollbar { width: 4px; }
+  .filetree::-webkit-scrollbar-track { background: transparent; }
+  .filetree::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .ft-dir { color: var(--text2); font-weight: 500; padding: 2px 0; }
+  .ft-xml { color: var(--accent); padding: 1px 0 1px 14px; }
+  .ft-more { color: var(--text3); padding: 1px 0 1px 14px; }
+
+  /* ── PROGRESS ── */
+  .prog { height: 2px; background: var(--border); border-radius: 1px; margin: 10px 0; overflow: hidden; }
+  .progbar { height: 100%; background: var(--accent); width: 0%; transition: width .25s; border-radius: 1px; }
+
+  /* ── LOG ── */
+  .log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    max-height: 110px;
+    overflow-y: auto;
+    font-size: 11px;
+    display: none;
+    margin-top: 10px;
+  }
+  .log::-webkit-scrollbar { width: 4px; }
+  .log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .log p { padding: 1px 0; }
+  .log .ok { color: var(--accent); }
+  .log .er { color: var(--red); }
+  .log .hl { color: var(--blue); }
+  .log .dim { color: var(--text3); }
+
+  /* ── FORM ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+  }
+  .field input, .field select {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 10px;
+    width: 100%;
+    transition: border-color .15s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.1);
+  }
+  .field select option { background: var(--bg2); }
+
+  /* ── BATH CARDS ── */
+  .bath-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .bath-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+  }
+  .bath-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .bath-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--accent-t);
+    color: var(--accent);
+    border: 1px solid rgba(74,222,128,0.25);
+  }
+  .bath-title { font-size: 12px; font-weight: 500; color: var(--text); }
+  .bath-opt { font-size: 11px; color: var(--text3); }
+
+  /* ── FORMULA BOX ── */
+  .formula {
+    background: var(--bg);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 14px;
+    line-height: 1.8;
+  }
+  .formula .dim { color: var(--text3); font-size: 11px; }
+
+  /* ── ALERTS ── */
+  .alert {
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .alert-info { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2); color: var(--blue); }
+  .alert-success { background: var(--accent-t); border: 1px solid rgba(74,222,128,0.2); color: var(--accent); }
+  .alert-error { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--red); display: none; }
+  .alert-warn { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); display: none; }
+
+  /* ── STATS ── */
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+  }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 5px; }
+  .stat-val { font-size: 18px; font-weight: 500; color: var(--text); }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.blue { color: var(--blue); }
+  .stat-val.amber { color: var(--amber); }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  .ptbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ptbl th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--bg2);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .ptbl td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .ptbl tr:last-child td { border-bottom: none; }
+  .ptbl td.cal { color: var(--accent); font-weight: 500; }
+  .ptbl tr:hover td { background: var(--bg3); }
+
+  /* ── BUTTONS ── */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1.25rem; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text2);
+    border-color: var(--border2);
+  }
+  .btn-secondary:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+  /* ── SECTION LABEL ── */
+  .slabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 3rem;
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  footer a { color: var(--text3); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { display: none; }
+    main { padding: 1.5rem; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .bath-grid { grid-template-columns: 1fr; }
+    .grid2 { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" stroke="#4ade80" stroke-width="1.5">
+        <polyline points="1,12 5,7 9,10 15,3"/>
+        <line x1="1" y1="15" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <span class="logo-text">DTS<span>cal</span></span>
+  </div>
+  <div class="header-meta">
+    <span class="header-tag">Silixa XML</span>
+    <span class="header-tag">Single-ended</span>
+    <span class="header-tag">Fire science</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside>
+    <div class="nav-label">Workflow</div>
+    <a class="nav-item active" href="#s1" id="nav1">
+      <span class="nav-num" id="nn1">1</span> Upload ZIP
+    </a>
+    <a class="nav-item" href="#s2" id="nav2">
+      <span class="nav-num" id="nn2">2</span> Calibration
+    </a>
+    <a class="nav-item" href="#s3" id="nav3">
+      <span class="nav-num" id="nn3">3</span> Export
+    </a>
+
+    <hr class="nav-divider"/>
+    <div class="nav-label">About</div>
+    <div class="nav-info">
+      Calibrates Silixa XT/Ultima DTS XML traces using single-ended reference bath method.<br><br>
+      One XML file per trace. Outputs long-format CSV ready for R.<br><br>
+      All processing happens <b>in your browser</b> — no data is uploaded to any server.<br><br>
+      <a href="https://github.com/dtscalibration/python-dts-calibration" target="_blank">python-dts-calibration ↗</a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- STEP 1 -->
+    <div class="section" id="s1">
+      <div class="section-head">
+        <div class="section-num on" id="sn1">1</div>
+        <span class="section-title">Upload Silixa project folder</span>
+        <span class="section-sub" id="filecount"></span>
+      </div>
+
+      <div class="alert alert-info">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/></svg>
+        ZIP your Silixa project folder (File → Export, or right-click → Compress). Each <code>.xml</code> trace file = one timestep. Subfolders are supported.
+      </div>
+
+      <div class="drop" id="dz" onclick="document.getElementById('zi').click()">
+        <div class="drop-icon">
+          <svg viewBox="0 0 32 32"><path d="M16 21V11M11 16l5-5 5 5"/><path d="M6 26h20M6 26a2 2 0 01-2-2V8a2 2 0 012-2h7l3 3h10a2 2 0 012 2v11a2 2 0 01-2 2H6z" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="drop-label"><b>Click to select ZIP</b> or drag & drop here</div>
+        <div class="drop-hint">*.zip — Silixa project export</div>
+      </div>
+      <input type="file" id="zi" accept=".zip" style="display:none" />
+
+      <div class="filetree" id="ftree" style="display:none"></div>
+      <div class="prog"><div class="progbar" id="pb1"></div></div>
+      <div class="log" id="lg1"></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="section" id="s2">
+      <div class="section-head">
+        <div class="section-num" id="sn2">2</div>
+        <span class="section-title">Configure calibration</span>
+      </div>
+
+      <div class="card">
+        <div class="slabel">Reference bath segments (LAF = length along fibre)</div>
+        <div class="bath-grid">
+          <div class="bath-card">
+            <div class="bath-head">
+              <span class="bath-badge">Bath A</span>
+              <span class="bath-title">Calibration reference</span>
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>Known temperature (°C)</label>
+              <input type="number" id="aT" value="20" step="0.1" />
+            </div>
+            <div class="grid2" style="margin-bottom:0">
+              <div class="field"><label>LAF start (m)</label><input type="number" id="aS" value="0" step="0.1"/></div>
+              <div class="field"><label>LAF end (m)</label><input type="number" id="aE" value="5" step="0.1"/></div>
+            </div>
+          </div>
+          <div class="bath-card">
+            <div class="bath-head">
+              <span class="bath-badge">Bath B</span>
+              <span class="bath-title">Second reference</span>
+              <span class="bath-opt">(optional)</span>
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>Known temperature (°C)</label>
+              <input type="number" id="bT" value="50" step="0.1" />
+            </div>
+            <div class="grid2" style="margin-bottom:0">
+              <div class="field"><label>LAF start (m)</label><input type="number" id="bS" value="95" step="0.1"/></div>
+              <div class="field"><label>LAF end (m)</label><input type="number" id="bE" value="100" step="0.1"/></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="formula">
+          T_cal = gain × T_raw + offset<br>
+          <span class="dim">Two-point: gain = (T_B − T_A) / (T_raw_B − T_raw_A) &nbsp;|&nbsp; offset = T_A − gain × T_raw_A<br>
+          One-point: gain = 1, offset = T_A − mean(T_raw in Bath A)</span>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Calibration mode</label>
+            <select id="cm">
+              <option value="2">Two-point (Bath A + B)</option>
+              <option value="1">One-point offset only (Bath A)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Output temperature units</label>
+            <select id="tu">
+              <option value="C">Celsius (°C)</option>
+              <option value="K">Kelvin (K)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="slabel">Cable section to retain</div>
+        <div class="alert alert-info" style="margin-bottom:12px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/></svg>
+          Clip output to your in-soil section. Reference baths and cable tails are excluded from the exported data. Leave as 0 / 9999 to keep all.
+        </div>
+        <div class="grid2" style="margin-bottom:0">
+          <div class="field"><label>LAF clip start (m)</label><input type="number" id="cs" value="0" step="0.1"/></div>
+          <div class="field"><label>LAF clip end (m)</label><input type="number" id="ce" value="9999" step="0.1"/></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="slabel">Deployment metadata</div>
+        <div class="grid3" style="margin-bottom:0">
+          <div class="field"><label>Site ID</label><input type="text" id="si" placeholder="e.g. Plot_A"/></div>
+          <div class="field"><label>Fire / experiment ID</label><input type="text" id="fi" placeholder="e.g. RxFire_2024"/></div>
+          <div class="field"><label>Fibre channel</label><input type="text" id="ch" placeholder="e.g. CH1"/></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="runBtn" disabled onclick="runCal()">
+          <svg viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg>
+          Run calibration
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="section" id="s3">
+      <div class="section-head">
+        <div class="section-num" id="sn3">3</div>
+        <span class="section-title">Preview & export</span>
+        <span class="section-sub" id="rowcount"></span>
+      </div>
+
+      <div class="alert alert-error" id="errBox"></div>
+      <div class="alert alert-warn" id="warnBox"></div>
+
+      <div id="pvSec" style="display:none">
+        <div class="stats" id="statsRow"></div>
+
+        <div class="slabel">Output preview — long format (first 10 rows)</div>
+        <div class="tbl-wrap">
+          <table class="ptbl" id="pvTbl"></table>
+        </div>
+
+        <div class="prog"><div class="progbar" id="pb3" style="width:0%"></div></div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="doExportCSV()">
+            <svg viewBox="0 0 16 16"><path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>
+            Download CSV
+          </button>
+          <button class="btn btn-secondary" onclick="doExportR()">
+            <svg viewBox="0 0 16 16"><path d="M2 13h12M8 2v9M4 7l4 4 4-4"/></svg>
+            Download R script
+          </button>
+          <button class="btn btn-secondary" onclick="doExportReadme()">
+            <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+            Download README
+          </button>
+        </div>
+      </div>
+
+      <div id="pvEmpty" style="color:var(--text3);font-size:13px;padding:1rem 0">
+        Run calibration above to preview and export data.
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <span>DTScal — browser-based, no server, no data leaves your machine</span>
+  <span style="margin-left:auto">Silixa XT/Ultima · Single-ended reference bath · Long-format R output</span>
+</footer>
+
+<script>
+// ── STATE ──
+let xmlFiles = [], calRows = [];
+const $ = id => document.getElementById(id);
+
+// ── LOG ──
+function log(id, msg, cls='') {
+  const e=$(id); e.style.display='block';
+  e.innerHTML += `<p class="${cls}">${msg}</p>`;
+  e.scrollTop = e.scrollHeight;
+}
+function pb(id, pct) { $(id).style.width = pct + '%'; }
+
+// ── NAV HIGHLIGHT ──
+window.addEventListener('scroll', () => {
+  ['s1','s2','s3'].forEach((id,i) => {
+    const el=$(id);
+    const nav=$('nav'+(i+1));
+    if(!el||!nav) return;
+    const r=el.getBoundingClientRect();
+    if(r.top<=120&&r.bottom>120){ nav.classList.add('active'); }
+    else { nav.classList.remove('active'); }
+  });
+});
+
+// ── DROP ZONE ──
+const dz = $('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) loadZip(e.dataTransfer.files[0]); });
+$('zi').addEventListener('change', e => { if(e.target.files[0]) loadZip(e.target.files[0]); });
+
+// ── LOAD ZIP ──
+async function loadZip(file) {
+  $('lg1').innerHTML = '';
+  log('lg1', `Loading: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`, 'dim');
+  pb('pb1', 10);
+  try {
+    const zip = await JSZip.loadAsync(file);
+    pb('pb1', 40);
+    const entries = Object.keys(zip.files).filter(n => n.toLowerCase().endsWith('.xml') && !zip.files[n].dir);
+    if (entries.length === 0) { log('lg1','No .xml files found in ZIP — check folder structure','er'); pb('pb1',0); return; }
+    log('lg1', `Found ${entries.length} XML trace files`, 'hl');
+
+    // File tree
+    const tree = $('ftree'); tree.style.display = 'block'; tree.innerHTML = '';
+    const dirs = [...new Set(entries.map(p => p.includes('/') ? p.split('/').slice(0,-1).join('/') : '(root)'))];
+    dirs.forEach(d => { tree.innerHTML += `<p class="ft-dir">📁 ${d}</p>`; });
+    entries.slice(0,8).forEach(f => { tree.innerHTML += `<p class="ft-xml">↳ ${f.split('/').pop()}</p>`; });
+    if (entries.length > 8) tree.innerHTML += `<p class="ft-more">  ... and ${entries.length-8} more files</p>`;
+
+    // Read all XML
+    xmlFiles = [];
+    for (let i=0; i<entries.length; i++) {
+      const txt = await zip.files[entries[i]].async('text');
+      xmlFiles.push({ name: entries[i], text: txt });
+      if (i%10===0 || i===entries.length-1) pb('pb1', 40 + Math.round((i+1)/entries.length*55));
+    }
+    pb('pb1', 100);
+    log('lg1', `${xmlFiles.length} traces ready`, 'ok');
+
+    dz.classList.add('loaded');
+    dz.innerHTML = `<div class="drop-icon"><svg viewBox="0 0 32 32" fill="none" stroke="#4ade80" stroke-width="1.5"><path d="M6 16l6 6L26 8"/></svg></div>
+      <div class="drop-label"><b>${file.name}</b></div>
+      <div class="drop-hint">${xmlFiles.length} XML traces found</div>`;
+
+    $('filecount').textContent = `${xmlFiles.length} files`;
+    $('sn1').textContent='✓'; $('sn1').className='section-num ok';
+    $('nn1').textContent='✓'; $('nn1').className='nav-num done';
+    $('sn2').className='section-num on';
+    $('runBtn').disabled = false;
+  } catch(err) { log('lg1','ZIP error: '+err.message,'er'); pb('pb1',0); }
+}
+
+// ── PARSE SILIXA XML ──
+function parseSilixaXML(text) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'text/xml');
+
+  // Timestamp
+  let datetime = '';
+  for (const tag of ['startDateTimeIndex','acquisitionTime','dateTimeStamp','DateTime','date']) {
+    const el = doc.querySelector(tag);
+    if (el && el.textContent.trim()) { datetime = el.textContent.trim(); break; }
+  }
+  if (!datetime) {
+    const root = doc.documentElement;
+    datetime = root.getAttribute('startDateTimeIndex') || root.getAttribute('dateTime') || '';
+  }
+
+  // Helper: get numeric array from a named element
+  const getArr = (...tags) => {
+    for (const tag of tags) {
+      const el = doc.querySelector(tag);
+      if (el) {
+        const vals = el.textContent.trim().split(/[\s,]+/).map(Number).filter(v => !isNaN(v) && isFinite(v));
+        if (vals.length > 0) return vals;
+      }
+    }
+    return [];
+  };
+
+  let laf = getArr('LAF','x','depth','Distance');
+  let tmp = getArr('TEMP','TMP','temperature','Temperature');
+  let st  = getArr('ST','Stokes');
+  let ast = getArr('AST','AntiStokes');
+
+  // Fallback: parse logData tabular block
+  if (laf.length === 0 || tmp.length === 0) {
+    const logData = doc.querySelector('logData');
+    if (logData) {
+      laf=[]; tmp=[]; st=[]; ast=[];
+      const rows = logData.textContent.trim().split(/\n/);
+      for (const r of rows) {
+        const v = r.trim().split(/[\s,\t]+/).map(Number);
+        if (v.length >= 2 && !isNaN(v[0]) && !isNaN(v[1])) {
+          laf.push(v[0]); tmp.push(v[1]);
+          if (v[2]!==undefined && !isNaN(v[2])) st.push(v[2]);
+          if (v[3]!==undefined && !isNaN(v[3])) ast.push(v[3]);
+        }
+      }
+    }
+  }
+
+  return { datetime, laf, tmp, st, ast };
+}
+
+// ── SEGMENT MEAN ──
+function segMean(laf, vals, s, e) {
+  const pts = [];
+  for (let i=0; i<laf.length; i++) {
+    if (laf[i] >= s && laf[i] <= e && !isNaN(vals[i])) pts.push(vals[i]);
+  }
+  if (pts.length === 0) return null;
+  return pts.reduce((a,b) => a+b, 0) / pts.length;
+}
+
+// ── RUN CALIBRATION ──
+function runCal() {
+  if (xmlFiles.length === 0) return;
+  calRows = [];
+  const aT=parseFloat($('aT').value), aS=parseFloat($('aS').value), aE=parseFloat($('aE').value);
+  const bT=parseFloat($('bT').value), bS=parseFloat($('bS').value), bE=parseFloat($('bE').value);
+  const mode=$('cm').value, tu=$('tu').value;
+  const cs=parseFloat($('cs').value)||0, ce=parseFloat($('ce').value)||9999;
+  const siteId=$('si').value||'NA', fireId=$('fi').value||'NA', chan=$('ch').value||'NA';
+  let errs=0, skipped=0;
+
+  pb('pb3',0);
+  for (let fi=0; fi<xmlFiles.length; fi++) {
+    try {
+      const { name, text } = xmlFiles[fi];
+      const { datetime, laf, tmp } = parseSilixaXML(text);
+      if (laf.length === 0 || tmp.length === 0) { errs++; continue; }
+
+      const rawA = segMean(laf, tmp, aS, aE);
+      if (rawA === null) { errs++; continue; }
+
+      let gain=1, offset=0;
+      if (mode === '2') {
+        const rawB = segMean(laf, tmp, bS, bE);
+        if (rawB !== null && Math.abs(rawB - rawA) > 0.01) {
+          gain = (bT - aT) / (rawB - rawA);
+          offset = aT - gain * rawA;
+        } else {
+          offset = aT - rawA;
+        }
+      } else {
+        offset = aT - rawA;
+      }
+
+      const ts = datetime || name.replace(/.*\//, '').replace('.xml','');
+      for (let i=0; i<laf.length; i++) {
+        if (laf[i] < cs || laf[i] > ce) { skipped++; continue; }
+        if (isNaN(tmp[i])) continue;
+        let tcal = gain * tmp[i] + offset;
+        if (tu === 'K') tcal += 273.15;
+        calRows.push({
+          site_id: siteId, fire_id: fireId, channel: chan,
+          datetime: ts,
+          laf_m: parseFloat(laf[i].toFixed(4)),
+          temp_raw: parseFloat(tmp[i].toFixed(3)),
+          temp_cal: parseFloat(tcal.toFixed(3)),
+          gain: parseFloat(gain.toFixed(6)),
+          offset: parseFloat(offset.toFixed(6))
+        });
+      }
+    } catch(e) { errs++; }
+    if (fi%20===0 || fi===xmlFiles.length-1) pb('pb3', Math.round((fi+1)/xmlFiles.length*100));
+  }
+
+  if (calRows.length === 0) { showErr('No valid data extracted. Check bath LAF ranges and XML tag names.'); return; }
+
+  $('sn2').textContent='✓'; $('sn2').className='section-num ok';
+  $('nn2').textContent='✓'; $('nn2').className='nav-num done';
+  $('sn3').className='section-num on';
+  renderPreview(tu, errs);
+}
+
+// ── RENDER PREVIEW ──
+function renderPreview(tu, errs) {
+  const n = calRows.length;
+  const temps = calRows.map(r => r.temp_cal);
+  const tmin = Math.min(...temps), tmax = Math.max(...temps);
+  const tmean = temps.reduce((a,b)=>a+b,0)/temps.length;
+  const unit = tu==='K' ? 'K' : '°C';
+  const nTimes = [...new Set(calRows.map(r => r.datetime))].length;
+
+  $('rowcount').textContent = `${n.toLocaleString()} rows`;
+
+  $('statsRow').innerHTML = [
+    { l:'Total rows',      v: n.toLocaleString(),        c:'' },
+    { l:'Traces',          v: nTimes.toLocaleString(),   c:'blue' },
+    { l:`Min (${unit})`,   v: tmin.toFixed(2),           c:'green' },
+    { l:`Max (${unit})`,   v: tmax.toFixed(2),           c:'amber' },
+  ].map(s => `<div class="stat"><div class="stat-label">${s.l}</div><div class="stat-val ${s.c}">${s.v}</div></div>`).join('');
+
+  const cols = ['site_id','fire_id','channel','datetime','laf_m','temp_raw','temp_cal','gain','offset'];
+  $('pvTbl').innerHTML =
+    `<tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr>` +
+    calRows.slice(0,10).map(r =>
+      `<tr>${cols.map(c=>`<td class="${c==='temp_cal'?'cal':''}">${r[c]}</td>`).join('')}</tr>`
+    ).join('');
+
+  $('pvSec').style.display = 'block';
+  $('pvEmpty').style.display = 'none';
+
+  if (errs > 0) {
+    $('warnBox').style.display = 'flex';
+    $('warnBox').innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;margin-top:1px"><path d="M8 2L15 14H1L8 2z"/><line x1="8" y1="7" x2="8" y2="10"/><circle cx="8" cy="12" r=".5" fill="currentColor"/></svg>
+      ${errs} file(s) could not be parsed — they may use a non-standard XML structure. Check that LAF/TEMP tags are present.`;
+  }
+
+  $('sn3').textContent='✓'; $('sn3').className='section-num ok';
+  $('nn3').textContent='✓'; $('nn3').className='nav-num done';
+
+  // scroll to results
+  document.getElementById('s3').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// ── EXPORT CSV ──
+function doExportCSV() {
+  const cols = ['site_id','fire_id','channel','datetime','laf_m','temp_raw','temp_cal','gain','offset'];
+  const lines = [cols.join(','), ...calRows.map(r => cols.map(c=>r[c]).join(','))];
+  dl('dts_calibrated_long.csv', lines.join('\n'), 'text/csv');
+}
+
+// ── EXPORT R SCRIPT ──
+function doExportR() {
+  const siteId = $('si').value || 'NA';
+  const script =
+`# ──────────────────────────────────────────────
+# DTS calibration import script
+# Generated by DTScal — https://github.com/YOUR_USERNAME/dts-calibration-tool
+# Site: ${siteId}
+# Method: single-ended reference bath
+# ──────────────────────────────────────────────
+
+library(tidyverse)
+library(lubridate)
+
+# 1. Load calibrated long-format data
+dts <- read_csv("dts_calibrated_long.csv",
+  col_types = cols(
+    site_id  = col_character(),
+    fire_id  = col_character(),
+    channel  = col_character(),
+    datetime = col_character(),
+    laf_m    = col_double(),
+    temp_raw = col_double(),
+    temp_cal = col_double(),
+    gain     = col_double(),
+    offset   = col_double()
+  )
+)
+
+# 2. Parse datetime
+# Common Silixa formats: "2024-03-15T14:32:00.000+00:00" or "2024-03-15 14:32:00"
+dts <- dts %>%
+  mutate(datetime = ymd_hms(datetime, quiet = TRUE))
+
+# 3. Quick summary
+cat("Date range: ", format(min(dts$datetime)), "to", format(max(dts$datetime)), "\\n")
+cat("LAF range: ", min(dts$laf_m), "to", max(dts$laf_m), "m\\n")
+cat("Temp range (cal):", round(min(dts$temp_cal),2), "to", round(max(dts$temp_cal),2), "\\n")
+
+# 4. Check calibration drift over time
+dts %>%
+  distinct(datetime, gain, offset) %>%
+  pivot_longer(c(gain, offset)) %>%
+  ggplot(aes(x = datetime, y = value)) +
+  geom_line(colour = "#4ade80") +
+  facet_wrap(~name, scales = "free_y") +
+  labs(title = "Calibration parameter drift", x = NULL, y = NULL) +
+  theme_minimal()
+
+# 5. Time × LAF heatmap (main DTS plot)
+dts %>%
+  ggplot(aes(x = datetime, y = laf_m, fill = temp_cal)) +
+  geom_raster(interpolate = TRUE) +
+  scale_fill_viridis_c(option = "inferno", name = "T (°C)") +
+  scale_y_reverse() +
+  labs(
+    title = paste("Calibrated DTS —", unique(dts$site_id)),
+    x = "Time", y = "LAF (m)"
+  ) +
+  theme_minimal()
+
+# 6. Single depth time-series (adjust laf_target to your depth of interest)
+laf_target <- 10.0   # metres along fibre
+tol        <- 0.13   # half-window (≈ half the spatial resolution)
+
+dts %>%
+  filter(abs(laf_m - laf_target) <= tol) %>%
+  ggplot(aes(x = datetime, y = temp_cal)) +
+  geom_line(colour = "#4ade80", linewidth = 0.8) +
+  labs(
+    title  = paste0("Temperature at LAF = ", laf_target, " m"),
+    x      = "Time",
+    y      = "Calibrated temperature (°C)"
+  ) +
+  theme_minimal()
+
+# 7. Max temperature per LAF point (fire front profile)
+dts %>%
+  group_by(laf_m) %>%
+  summarise(temp_max = max(temp_cal), .groups = "drop") %>%
+  ggplot(aes(x = laf_m, y = temp_max)) +
+  geom_area(fill = "#4ade8033", colour = "#4ade80", linewidth = 0.7) +
+  labs(
+    title = "Peak temperature profile along fibre",
+    x = "LAF (m)", y = "Max calibrated temperature (°C)"
+  ) +
+  theme_minimal()
+`;
+  dl('dts_import.R', script, 'text/plain');
+}
+
+// ── EXPORT README ──
+function doExportReadme() {
+  const siteId = $('si').value || 'NA';
+  const fireId = $('fi').value || 'NA';
+  const chan   = $('ch').value || 'NA';
+  const now    = new Date().toISOString().split('T')[0];
+  const nTraces = [...new Set(calRows.map(r => r.datetime))].length;
+  const temps = calRows.map(r => r.temp_cal);
+  const readme =
+`# DTS Calibration Output
+Generated: ${now}
+Tool: DTScal (https://github.com/YOUR_USERNAME/dts-calibration-tool)
+
+## Deployment
+- Site ID:   ${siteId}
+- Fire ID:   ${fireId}
+- Channel:   ${chan}
+- Traces:    ${nTraces}
+- Total rows:${calRows.length.toLocaleString()}
+
+## Calibration method
+Single-ended reference bath
+- Bath A: ${$('aT').value}°C at LAF ${$('aS').value}–${$('aE').value} m
+- Bath B: ${$('bT').value}°C at LAF ${$('bS').value}–${$('bE').value} m
+- Mode: ${$('cm').value === '2' ? 'Two-point (gain + offset)' : 'One-point (offset only)'}
+- Cable section retained: LAF ${$('cs').value}–${$('ce').value} m
+
+## Output columns (dts_calibrated_long.csv)
+| column    | description                                    |
+|-----------|------------------------------------------------|
+| site_id   | Site identifier                                |
+| fire_id   | Fire / experiment identifier                   |
+| channel   | Fibre channel                                  |
+| datetime  | Timestamp from XML header (ISO 8601)           |
+| laf_m     | Length along fibre in metres                   |
+| temp_raw  | Instrument-reported temperature (°C)           |
+| temp_cal  | Calibrated temperature (°C or K)               |
+| gain      | Per-trace calibration gain                     |
+| offset    | Per-trace calibration offset                   |
+
+## R import
+See dts_import.R for a ready-to-run import and visualisation script.
+Requires: tidyverse, lubridate
+
+## Temperature range
+Min: ${Math.min(...temps).toFixed(2)}   Max: ${Math.max(...temps).toFixed(2)}
+`;
+  dl('README.txt', readme, 'text/plain');
+}
+
+// ── HELPERS ──
+function dl(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name;
+  a.click();
+}
+function showErr(m) {
+  $('errBox').style.display='flex';
+  $('errBox').innerHTML=`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="7"/><line x1="5" y1="5" x2="11" y2="11"/><line x1="11" y1="5" x2="5" y2="11"/></svg> ${m}`;
+}
+</script>
+</body>
+</html>
