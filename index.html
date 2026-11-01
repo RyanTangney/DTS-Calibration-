@@ -6,7 +6,1170 @@
 <title>DTScal — Silixa DTS Calibration Tool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DTScal — Silixa DTS Calibration Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root {
+  --bg:#0d0f0e;--bg2:#131614;--bg3:#191c1a;
+  --border:#2a2e2b;--border2:#363c38;
+  --text:#e8ede9;--text2:#8a9e8d;--text3:#566359;
+  --accent:#4ade80;--accent2:#22c55e;--accent-t:rgba(74,222,128,0.08);
+  --amber:#fbbf24;--red:#f87171;--blue:#60a5fa;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:6px;--rl:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;min-height:100vh}
+
+header{border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;gap:1.5rem;height:56px;position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:28px;height:28px;border:1px solid var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center}
+.logo-text{font-size:13px;font-weight:500;color:var(--text);letter-spacing:.02em}
+.logo-text span{color:var(--accent)}
+.htags{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.htag{border:1px solid var(--border2);border-radius:99px;padding:2px 10px;color:var(--text3);font-size:11px}
+
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px)}
+
+aside{border-right:1px solid var(--border);padding:2rem 1.25rem;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:.75rem}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--r);cursor:pointer;color:var(--text2);font-size:12px;transition:background .15s,color .15s;border:1px solid transparent;margin-bottom:2px;text-decoration:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent-t);color:var(--accent);border-color:rgba(74,222,128,.2)}
+.nav-num{width:18px;height:18px;border-radius:50%;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.nav-num.done{background:var(--accent);border-color:var(--accent);color:#000}
+.nav-divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+.nav-info{font-size:11px;color:var(--text3);line-height:1.8}
+.nav-info a{color:var(--accent);text-decoration:none}
+.nav-info a:hover{text-decoration:underline}
+.nav-info code{color:var(--text2);background:var(--bg3);padding:1px 4px;border-radius:3px}
+
+main{padding:2.5rem 3rem;max-width:880px}
+
+.section{margin-bottom:2.5rem;animation:fadeup .35s ease both}
+.section:nth-child(2){animation-delay:.06s}
+.section:nth-child(3){animation-delay:.12s}
+.section:nth-child(4){animation-delay:.18s}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.sec-num{width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);flex-shrink:0;transition:all .2s}
+.sec-num.on{border-color:var(--accent);color:var(--accent)}
+.sec-num.ok{background:var(--accent);border-color:var(--accent);color:#000;font-weight:500}
+.sec-title{font-size:14px;font-weight:500;color:var(--text)}
+.sec-sub{font-size:11px;color:var(--text3);margin-left:auto}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:1.25rem;margin-bottom:1rem}
+
+.drop{border:1px dashed var(--border2);border-radius:var(--rl);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--bg2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-t)}
+.drop.loaded{border-style:solid;border-color:var(--accent);background:var(--accent-t)}
+.drop-icon{margin-bottom:.6rem;opacity:.5}
+.drop-icon svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.5}
+.drop.loaded .drop-icon{opacity:1}
+.drop-label{font-size:13px;color:var(--text2)}
+.drop-label b{color:var(--text);font-weight:500}
+.drop-hint{font-size:11px;color:var(--text3);margin-top:3px}
+
+.rtd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.rtd-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:14px}
+.rtd-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.rtd-badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--accent-t);color:var(--accent);border:1px solid rgba(74,222,128,.25)}
+.rtd-badge.b{background:rgba(96,165,250,.08);color:var(--blue);border-color:rgba(96,165,250,.25)}
+.rtd-title{font-size:12px;font-weight:500;color:var(--text)}
+.rtd-opt{font-size:11px;color:var(--text3)}
+.rtd-status{font-size:11px;margin-top:8px;padding:6px 10px;border-radius:var(--r);display:none}
+.rtd-status.ok{background:var(--accent-t);color:var(--accent);border:1px solid rgba(74,222,128,.2);display:block}
+.rtd-status.er{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2);display:block}
+
+.filetree{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;max-height:130px;overflow-y:auto;margin-top:10px;font-size:12px}
+.ft-dir{color:var(--text2);font-weight:500;padding:2px 0}
+.ft-xml{color:var(--accent);padding:1px 0 1px 14px}
+.ft-more{color:var(--text3);padding:1px 0 1px 14px}
+
+.prog{height:2px;background:var(--border);border-radius:1px;margin:10px 0;overflow:hidden}
+.progbar{height:100%;background:var(--accent);width:0%;transition:width .25s;border-radius:1px}
+.log{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;max-height:100px;overflow-y:auto;font-size:11px;display:none;margin-top:8px}
+.log p{padding:1px 0}
+.log .ok{color:var(--accent)}.log .er{color:var(--red)}.log .hl{color:var(--blue)}.log .dim{color:var(--text3)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3)}
+.field input,.field select{background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:13px;padding:8px 10px;width:100%;transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(74,222,128,.1)}
+.field select option{background:var(--bg2)}
+
+.formula{background:var(--bg);border-left:2px solid var(--accent);border-radius:0 var(--r) var(--r) 0;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.9}
+.formula .dim{color:var(--text3);font-size:11px}
+
+.alert{border-radius:var(--r);padding:10px 14px;font-size:12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.alert svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;stroke:currentColor;fill:none;stroke-width:1.5}
+.a-info{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:var(--blue)}
+.a-warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:var(--amber);display:none}
+.a-err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red);display:none}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:5px}
+.stat-val{font-size:18px;font-weight:500;color:var(--text)}
+.stat-val.green{color:var(--accent)}.stat-val.blue{color:var(--blue)}.stat-val.amber{color:var(--amber)}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl)}
+.ptbl{width:100%;border-collapse:collapse;font-size:12px}
+.ptbl th{text-align:left;padding:8px 12px;background:var(--bg2);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap}
+.ptbl td{padding:6px 12px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl td.cal{color:var(--accent);font-weight:500}
+.ptbl td.rtd{color:var(--blue)}
+.ptbl tr:hover td{background:var(--bg3)}
+
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1.25rem}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--r);font-family:var(--mono);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.btn-p{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-p:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-s{background:transparent;color:var(--text2);border-color:var(--border2)}
+.btn-s:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+
+.slabel{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:10px;margin-top:4px}
+
+footer{border-top:1px solid var(--border);padding:1.5rem 3rem;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:1.5rem}
+footer a{color:var(--text3);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  aside{display:none}
+  main{padding:1.5rem}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .rtd-grid{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+.chk{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);margin-bottom:10px;cursor:pointer;line-height:1.5}
+.chk input{margin-top:3px;accent-color:var(--accent);flex-shrink:0}
+.chk input:disabled+span{opacity:.45}
+.hint{font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6}
+code.ic{color:var(--text2);background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono)}
+.alert>span{min-width:0}
+.formula sub{font-size:.8em}
+.field label.nocap{text-transform:none;letter-spacing:.02em}
+#lg1{max-height:170px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" stroke="#4ade80" stroke-width="1.5" width="14" height="14">
+        <polyline points="1,12 5,7 9,10 15,3"/>
+        <line x1="1" y1="15" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <span class="logo-text">DTS<span>cal</span></span>
+  </div>
+  <div class="htags">
+    <span class="htag">Silixa XML</span>
+    <span class="htag">Stokes / anti-Stokes</span>
+    <span class="htag">Single-ended</span>
+    <span class="htag">Fire science</span>
+  </div>
+</header>
+
+<div class="layout">
+<aside>
+  <div class="nav-label">Workflow</div>
+  <a class="nav-item active" href="#s1" id="nav1"><span class="nav-num" id="nn1">1</span>DTS traces (ZIP)</a>
+  <a class="nav-item" href="#s2" id="nav2"><span class="nav-num" id="nn2">2</span>Reference sections</a>
+  <a class="nav-item" href="#s3" id="nav3"><span class="nav-num" id="nn3">3</span>Calibration settings</a>
+  <a class="nav-item" href="#s4" id="nav4"><span class="nav-num" id="nn4">4</span>Export</a>
+  <hr class="nav-divider"/>
+  <div class="nav-label">About</div>
+  <div class="nav-info">
+    Calibrates Silixa XT/Ultima XML traces from the Stokes / anti-Stokes ratio, one trace at a time, against a reference section of known temperature.<br><br>
+    <code>T = &gamma; / (ln(S/AS) + C &minus; &Delta;&alpha;&middot;z)</code><br><br>
+    The reference temperature can come from an RTD CSV (nearest timestamp) or from the probe readings stored in each XML.<br><br>
+    All processing is <b>local</b> &mdash; no data leaves your machine.<br><br>
+    <a href="https://doi.org/10.1071/WF17107" target="_blank" rel="noopener">Tangney et al. 2018 &nearr;</a><br>
+    <a href="https://github.com/dtscalibration/python-dts-calibration" target="_blank" rel="noopener">python-dts-calibration &nearr;</a>
+  </div>
+</aside>
+
+<main>
+
+<!-- STEP 1 -->
+<div class="section" id="s1">
+  <div class="sec-head">
+    <div class="sec-num on" id="sn1">1</div>
+    <span class="sec-title">Upload Silixa project ZIP</span>
+    <span class="sec-sub" id="filecount"></span>
+  </div>
+  <div class="alert a-info">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/></svg>
+    <span>ZIP the folder of <code class="ic">channel_*.xml</code> traces (one file per timestep, subfolders fine; <code class="ic">.mat</code> files are ignored). Files are read one at a time while calibrating, so large projects are fine.</span>
+  </div>
+  <div class="drop" id="dz" onclick="document.getElementById('zi').click()">
+    <div class="drop-icon">
+      <svg viewBox="0 0 28 28"><path d="M14 19V9M9 14l5-5 5 5"/><path d="M4 22h20M4 22a2 2 0 01-2-2V6a2 2 0 012-2h6l3 3h10a2 2 0 012 2v11a2 2 0 01-2 2H4z" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="drop-label"><b>Click to select ZIP</b> or drag &amp; drop</div>
+    <div class="drop-hint">*.zip &mdash; Silixa project export</div>
+  </div>
+  <input type="file" id="zi" accept=".zip" style="display:none"/>
+  <div class="filetree" id="ftree" style="display:none"></div>
+  <div class="prog"><div class="progbar" id="pb1"></div></div>
+  <div class="log" id="lg1"></div>
+</div>
+
+<!-- STEP 2 -->
+<div class="section" id="s2">
+  <div class="sec-head">
+    <div class="sec-num" id="sn2">2</div>
+    <span class="sec-title">Reference sections</span>
+  </div>
+  <div class="alert a-info">
+    <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/></svg>
+    <span>Section A is a stretch of fibre at a known temperature (a bath, or your reference coil). Pick where its temperature comes from, and which LAF range it covers. Section B is optional and only needed to solve differential attenuation from the data.</span>
+  </div>
+
+  <div class="rtd-grid">
+    <!-- Section A -->
+    <div class="rtd-card">
+      <div class="rtd-head">
+        <span class="rtd-badge">Section A</span>
+        <span class="rtd-title">Reference</span>
+        <span class="rtd-opt">(required)</span>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Temperature source</label>
+        <select id="srcA">
+          <option value="rtd" selected>RTD probe CSV (nearest timestamp)</option>
+          <option value="probe1">Instrument probe 1 (read from each XML)</option>
+          <option value="probe1first">Instrument probe 1, first trace only (as main.m)</option>
+          <option value="probe2">Instrument probe 2 (read from each XML)</option>
+          <option value="fixed">Fixed temperature</option>
+        </select>
+      </div>
+      <div id="rtdBoxA">
+        <div class="drop" id="dzA" onclick="document.getElementById('csvA').click()" style="padding:1.1rem 1rem">
+          <div class="drop-icon"><svg viewBox="0 0 20 20" width="22" height="22"><path d="M10 14V6M6 10l4-4 4 4"/><path d="M3 16h14"/></svg></div>
+          <div class="drop-label" style="font-size:12px"><b>Upload Bath A RTD CSV</b></div>
+          <div class="drop-hint">date/time + temperature</div>
+        </div>
+        <input type="file" id="csvA" accept=".csv,.txt,.tsv" style="display:none"/>
+      </div>
+      <div id="fixBoxA" style="display:none" class="field"><label>Temperature (&deg;C)</label><input type="number" id="fixA" value="20" step="0.01"/></div>
+      <div class="rtd-status" id="statusA"></div>
+      <div style="margin-top:12px">
+        <div class="slabel">LAF range of section A (m)</div>
+        <div class="grid2" style="margin-bottom:0">
+          <div class="field"><label>Start</label><input type="number" id="aS" value="5" step="0.1"/></div>
+          <div class="field"><label>End</label><input type="number" id="aE" value="30" step="0.1"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B -->
+    <div class="rtd-card">
+      <div class="rtd-head">
+        <span class="rtd-badge b">Section B</span>
+        <span class="rtd-title">Second reference</span>
+        <span class="rtd-opt">(optional)</span>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Temperature source</label>
+        <select id="srcB">
+          <option value="off" selected>Not used</option>
+          <option value="rtd">RTD probe CSV (nearest timestamp)</option>
+          <option value="fixed">Fixed temperature</option>
+        </select>
+      </div>
+      <div id="rtdBoxB" style="display:none">
+        <div class="drop" id="dzB" onclick="document.getElementById('csvB').click()" style="padding:1.1rem 1rem">
+          <div class="drop-icon"><svg viewBox="0 0 20 20" width="22" height="22"><path d="M10 14V6M6 10l4-4 4 4"/><path d="M3 16h14"/></svg></div>
+          <div class="drop-label" style="font-size:12px"><b>Upload Bath B RTD CSV</b></div>
+          <div class="drop-hint">date/time + temperature</div>
+        </div>
+        <input type="file" id="csvB" accept=".csv,.txt,.tsv" style="display:none"/>
+      </div>
+      <div id="fixBoxB" style="display:none" class="field"><label>Temperature (&deg;C)</label><input type="number" id="fixB" value="50" step="0.01"/></div>
+      <div class="rtd-status" id="statusB"></div>
+      <div style="margin-top:12px" id="rangeB">
+        <div class="slabel">LAF range of section B (m)</div>
+        <div class="grid2" style="margin-bottom:0">
+          <div class="field"><label>Start</label><input type="number" id="bS" value="95" step="0.1"/></div>
+          <div class="field"><label>End</label><input type="number" id="bE" value="120" step="0.1"/></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RTD column mapping + clock -->
+  <div class="card" id="colMapCard" style="display:none">
+    <div class="slabel">RTD CSV columns &mdash; auto-detected, adjust if needed</div>
+    <div class="grid3" id="aMapRow" style="margin-bottom:10px">
+      <div class="field"><label>Bath A &mdash; date / datetime</label><select id="aDateCol"></select></div>
+      <div class="field"><label>Bath A &mdash; separate time (optional)</label><select id="aTimeCol"></select></div>
+      <div class="field"><label>Bath A &mdash; temperature</label><select id="aTempCol"></select></div>
+    </div>
+    <div class="grid3" id="bMapRow" style="display:none;margin-bottom:10px">
+      <div class="field"><label>Bath B &mdash; date / datetime</label><select id="bDateCol"></select></div>
+      <div class="field"><label>Bath B &mdash; separate time (optional)</label><select id="bTimeCol"></select></div>
+      <div class="field"><label>Bath B &mdash; temperature</label><select id="bTempCol"></select></div>
+    </div>
+    <div class="slabel" style="margin-top:6px">RTD logger clock</div>
+    <div class="grid2" style="margin-bottom:0">
+      <div class="field">
+        <label>UTC offset of RTD timestamps (hours)</label>
+        <input type="number" id="tzOff" step="0.5" value="0"/>
+      </div>
+      <div class="field">
+        <label>Dates written as</label>
+        <select id="dmy">
+          <option value="1" selected>Day / Month / Year (09/05/2017 = 9 May)</option>
+          <option value="0">Month / Day / Year (09/05/2017 = 5 Sep)</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint" id="tzHint">Only used for timestamps with no zone of their own (ISO strings ending in Z or +08:00 are taken as written). DTS traces are always UTC internally.</div>
+  </div>
+</div>
+
+<!-- STEP 3 -->
+<div class="section" id="s3">
+  <div class="sec-head">
+    <div class="sec-num" id="sn3">3</div>
+    <span class="sec-title">Calibration settings</span>
+  </div>
+
+  <div class="card">
+    <div class="formula">
+      T(z) = &gamma; / ( ln(Stokes / anti-Stokes) + C &minus; &Delta;&alpha; &middot; z )  &nbsp;[kelvin]<br>
+      <span class="dim">C is solved for every trace so that section A reads its reference temperature: C = &gamma;/T<sub>A</sub> &minus; mean(ln S/AS) + &Delta;&alpha; &middot; mean(z).<br>
+      Same model as your <code class="ic">calibrate.m</code> and <code class="ic">DTS.m</code>. Points where Stokes or anti-Stokes is &le; 0 (noise, off the fibre) have no temperature.</span>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label class="nocap">&gamma; scaling factor (K)</label>
+        <input type="number" id="gamma" value="481.5" step="any"/>
+      </div>
+      <div class="field">
+        <label class="nocap">&Delta;&alpha; differential attenuation (1/m)</label>
+        <input type="number" id="dalpha" value="0.000054041" step="any"/>
+      </div>
+    </div>
+    <div class="hint" style="margin:-4px 0 12px">&gamma; is filled from the XML (<code class="ic">TemperatureScalingFactor</code>). The default &Delta;&alpha; is the bare-fibre value from your <code class="ic">calibrate.m</code>. Change it, together with the section A / B LAF ranges above, to suit each cable and layout (e.g. <code class="ic">5.4e-5</code> is accepted).</div>
+    <label class="chk"><input type="checkbox" id="fitAlpha" disabled/> <span>Solve &Delta;&alpha; for every trace from sections A and B instead of using the fixed value (needs section B; works best when A and B are far apart)</span></label>
+    <div class="grid2" style="margin-top:12px">
+      <div class="field">
+        <label>Output temperature units</label>
+        <select id="tu">
+          <option value="C">Celsius (&deg;C)</option>
+          <option value="K">Kelvin (K)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max RTD match tolerance</label>
+        <select id="tol">
+          <option value="60">&plusmn; 1 minute</option>
+          <option value="300" selected>&plusmn; 5 minutes</option>
+          <option value="600">&plusmn; 10 minutes</option>
+          <option value="1800">&plusmn; 30 minutes</option>
+          <option value="Infinity">No limit</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="slabel">Fibre section to keep in the output</div>
+    <div class="alert a-info" style="margin-bottom:12px">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/></svg>
+      <span>Clip to your in-soil section. Leave blank for no limit. Beyond the fibre end, noise can pass the &gt;0 test by chance and give wild temperatures, so clipping is worth doing.</span>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>LAF from (m)</label><input type="number" id="cs" placeholder="no limit" step="0.1"/></div>
+      <div class="field"><label>LAF to (m)</label><input type="number" id="ce" placeholder="no limit" step="0.1"/></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="dropInvalid" checked/> <span>Leave out points with no valid temperature (keeps the CSV small)</span></label>
+    <label class="chk" style="margin-bottom:0"><input type="checkbox" id="incRaw"/> <span>Include raw Stokes and anti-Stokes columns (larger file)</span></label>
+  </div>
+
+  <div class="card">
+    <div class="slabel">Deployment metadata</div>
+    <div class="grid3" style="margin-bottom:0">
+      <div class="field"><label>Site ID</label><input type="text" id="si" placeholder="e.g. Plot_A"/></div>
+      <div class="field"><label>Fire / experiment ID</label><input type="text" id="fi" placeholder="e.g. RxFire_2024"/></div>
+      <div class="field"><label>Fibre channel</label><input type="text" id="ch" placeholder="e.g. CH1"/></div>
+    </div>
+  </div>
+
+  <div class="btn-row" style="align-items:center">
+    <button class="btn btn-p" id="runBtn" disabled onclick="runCal()">
+      <svg viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14" fill="currentColor" stroke="none"/></svg>
+      Run calibration
+    </button>
+    <span class="hint" id="readyHint" style="margin:0">Upload a ZIP of XML traces to begin.</span>
+  </div>
+  <div class="prog" style="margin-top:14px"><div class="progbar" id="pb4"></div></div>
+</div>
+
+<!-- STEP 4 -->
+<div class="section" id="s4">
+  <div class="sec-head">
+    <div class="sec-num" id="sn4">4</div>
+    <span class="sec-title">Preview &amp; export</span>
+    <span class="sec-sub" id="rowcount"></span>
+  </div>
+  <div class="alert a-err" id="errBox"></div>
+  <div class="alert a-warn" id="warnBox"></div>
+  <div id="pvSec" style="display:none">
+    <div class="stats" id="statsRow"></div>
+    <div class="slabel">Per-trace calibration (first rows of dts_trace_parameters.csv)</div>
+    <div class="tbl-wrap" style="margin-bottom:1.25rem"><table class="ptbl" id="qcTbl"></table></div>
+    <div class="slabel">Long format output (first rows of dts_calibrated_long.csv)</div>
+    <div class="tbl-wrap"><table class="ptbl" id="pvTbl"></table></div>
+    <div class="btn-row">
+      <button class="btn btn-p" onclick="doExportCSV()">
+        <svg viewBox="0 0 16 16"><path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>
+        Long CSV
+      </button>
+      <button class="btn btn-s" onclick="doExportParams()">
+        <svg viewBox="0 0 16 16"><path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>
+        Trace parameters CSV
+      </button>
+      <button class="btn btn-s" onclick="doExportR()">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+        R script
+      </button>
+      <button class="btn btn-s" onclick="doExportReadme()">
+        <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+        README
+      </button>
+    </div>
+  </div>
+  <div id="pvEmpty" style="color:var(--text3);font-size:13px;padding:.75rem 0">Run calibration above to preview and export.</div>
+</div>
+
+</main>
+</div>
+
+<footer>
+  <span>DTScal &mdash; all processing is local, no data leaves your machine</span>
+  <span style="margin-left:auto">Silixa XT/Ultima &middot; Stokes / anti-Stokes single-ended calibration &middot; Long-format R output</span>
+</footer>
+<script>
+// ==== CORE START ====
+const KELVIN = 273.15;
+const DEFAULT_GAMMA = 481.5;        // K, Silixa TemperatureScalingFactor (also in your calibrate.m)
+const DEFAULT_DALPHA = 5.4041e-05;  // 1/m, differential attenuation, "bare fibre" in your calibrate.m
+
+// ---------- timestamps ----------
+// Returns UTC milliseconds, or NaN.
+//  naiveOffsetH : UTC offset (hours) assumed when the string carries no zone
+//  dmy          : true => 09/05/2017 means 9 May (Australian/UK), false => 5 Sept (US)
+function parseTimestamp(str, naiveOffsetH, dmy) {
+  if (str == null) return NaN;
+  const s = String(str).trim().replace(/^"|"$/g, '');
+  if (!s) return NaN;
+  const tzMin = (z) => {
+    if (!z) return null;
+    if (/^z$/i.test(z)) return 0;
+    const m = z.match(/^([+-])(\d{2}):?(\d{2})?$/);
+    return m ? (m[1] === '-' ? -1 : 1) * (parseInt(m[2], 10) * 60 + parseInt(m[3] || '0', 10)) : null;
+  };
+  const build = (y, mo, d, hh, mi, ss, frac, z) => {
+    if (y < 100) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mi > 59 || ss > 60) return NaN;
+    const ms = frac ? Math.round(parseFloat('0.' + frac) * 1000) : 0;
+    const off = tzMin(z);
+    const offMin = off == null ? Math.round((naiveOffsetH || 0) * 60) : off;
+    return Date.UTC(y, mo - 1, d, hh, mi, ss, ms) - offMin * 60000;
+  };
+  const T = '(?:[T\\s]+(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:[.,](\\d+))?)?)?';
+  const Z = '\\s*(Z|[+-]\\d{2}(?::?\\d{2})?)?';
+  let m = s.match(new RegExp('^(\\d{4})-(\\d{1,2})-(\\d{1,2})' + T + Z + '$', 'i'));
+  if (m) return build(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0), m[7], m[8]);
+  m = s.match(new RegExp('^(\\d{4})/(\\d{1,2})/(\\d{1,2})' + T + Z + '$', 'i'));
+  if (m) return build(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0), m[7], m[8]);
+  m = s.match(new RegExp('^(\\d{1,2})[/.\\-](\\d{1,2})[/.\\-](\\d{2,4})' + T + '\\s*(AM|PM)?' + Z + '$', 'i'));
+  if (m) {
+    let hh = +(m[4] || 0);
+    if (m[8]) { const pm = /pm/i.test(m[8]); if (hh === 12) hh = pm ? 12 : 0; else if (pm) hh += 12; }
+    const a = +m[1], b = +m[2];
+    return build(+m[3], dmy ? b : a, dmy ? a : b, hh, +(m[5] || 0), +(m[6] || 0), m[7], m[9]);
+  }
+  return NaN;
+}
+
+// channel_1_20170509043052000.xml  ->  UTC ms (Silixa file names are UTC)
+function parseCompactName(name) {
+  const m = String(name).match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{3})\.[a-z]+$/i);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) : NaN;
+}
+
+// ---------- Silixa / WITSML XML ----------
+function parseWitsml(text) {
+  const i0 = text.indexOf('<logData'), i1 = text.indexOf('</logData>');
+  if (i0 < 0 || i1 < 0) throw new Error('no <logData> block (not a Silixa XML trace?)');
+  const head = text.slice(0, i0), body = text.slice(i0, i1), tail = text.slice(i1);
+  const tag = (s, t) => {
+    const m = s.match(new RegExp('<' + t + '(?:\\s[^>]*)?>\\s*([^<]*?)\\s*</' + t + '>'));
+    return m ? m[1] : null;
+  };
+  const num = (s, t) => { const v = tag(s, t); return v == null ? NaN : parseFloat(v); };
+  const mnem = (tag(body, 'mnemonicList') || 'LAF,ST,AST').split(',').map(x => x.trim().toUpperCase());
+  const cL = mnem.indexOf('LAF'), cS = mnem.indexOf('ST'), cA = mnem.indexOf('AST'), cT = mnem.indexOf('TMP');
+  if (cL < 0 || cS < 0 || cA < 0) throw new Error('LAF/ST/AST columns not found (' + mnem.join(',') + ')');
+  const need = Math.max(cL, cS, cA) + 1;
+  const L = [], S = [], A = [], P = [];
+  const re = /<data>([^<]*)<\/data>/g;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    const p = m[1].split(',');
+    if (p.length < need) continue;
+    const z = +p[cL];
+    if (!isFinite(z)) continue;
+    L.push(z); S.push(+p[cS]); A.push(+p[cA]); P.push(cT >= 0 ? +p[cT] : NaN);
+  }
+  if (L.length < 3) throw new Error('fewer than 3 data rows');
+  return {
+    laf: Float64Array.from(L), st: Float64Array.from(S), ast: Float64Array.from(A), tmp: Float64Array.from(P),
+    startISO: tag(head, 'startDateTimeIndex'), endISO: tag(head, 'endDateTimeIndex'),
+    probe1: num(tail, 'probe1Temperature'), probe2: num(tail, 'probe2Temperature'),
+    internalRef: num(tail, 'referenceTemperature'),
+    gamma: num(tail, 'TemperatureScalingFactor'),
+    intRefStart: num(tail, 'InternalReferenceStart'), intRefStop: num(tail, 'InternalReferenceStop'),
+    doubleEnded: tag(tail, 'isDoubleEnded') === '1'
+  };
+}
+
+// ---------- calibration ----------
+// y = ln(Stokes/anti-Stokes); NaN where either intensity is <= 0 (noise, off the fibre).
+function logRatio(st, ast) {
+  const y = new Float64Array(st.length);
+  for (let i = 0; i < y.length; i++) y[i] = (st[i] > 0 && ast[i] > 0) ? Math.log(st[i] / ast[i]) : NaN;
+  return y;
+}
+
+// mean(y) and mean(z) over valid points strictly inside (lo, hi) -- same bounds as calibrate.m
+function sectionStats(laf, y, lo, hi) {
+  let n = 0, sy = 0, sz = 0;
+  for (let i = 0; i < laf.length; i++) {
+    if (laf[i] > lo && laf[i] < hi && !isNaN(y[i])) { n++; sy += y[i]; sz += laf[i]; }
+  }
+  return { n, ym: n ? sy / n : NaN, zm: n ? sz / n : NaN };
+}
+
+// Single-ended calibration, same model as calibrate.m:
+//   y = gamma/T - C + dAlpha*z      =>   T = gamma / (y + C - dAlpha*z)     (T in kelvin)
+// One reference section fixes C. A second one (optional) also lets dAlpha be solved per trace.
+function calibrateTrace(laf, y, cfg, TA_C, TB_C) {
+  const g = cfg.gamma;
+  const a = sectionStats(laf, y, cfg.aLo, cfg.aHi);
+  if (a.n < (cfg.minPts || 3)) return { error: a.n === 0 ? 'reference section A has no valid points inside its LAF range (check the range)' : 'reference section A has too few valid points' };
+  let dAlpha = cfg.dAlpha;
+  if (cfg.fitAlpha && TB_C != null && !isNaN(TB_C)) {
+    const b = sectionStats(laf, y, cfg.bLo, cfg.bHi);
+    if (b.n < (cfg.minPts || 3)) return { error: b.n === 0 ? 'reference section B has no valid points inside its LAF range (check the range)' : 'reference section B has too few valid points' };
+    const dz = b.zm - a.zm;
+    if (Math.abs(dz) < 5) return { error: 'sections A and B are less than 5 m apart: too close to solve differential attenuation' };
+    dAlpha = ((b.ym - a.ym) - g * (1 / (TB_C + KELVIN) - 1 / (TA_C + KELVIN))) / dz;
+  }
+  const C = g / (TA_C + KELVIN) - a.ym + dAlpha * a.zm;
+  return { C, dAlpha, nA: a.n };
+}
+
+// kelvin; NaN if invalid
+function tempK(yi, z, C, dAlpha, gamma) {
+  if (isNaN(yi)) return NaN;
+  const d = yi + C - dAlpha * z;
+  return d > 0 ? gamma / d : NaN;
+}
+
+// ---------- RTD CSV ----------
+function splitCSVLine(line, sep) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === sep) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out.map(x => x.trim());
+}
+
+function readTable(text) {
+  text = text.replace(/^﻿/, '');
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return null;
+  const count = (ch) => (lines[0].match(new RegExp(ch === '\t' ? '\t' : '\\' + ch, 'g')) || []).length;
+  const sep = [',', ';', '\t'].map(c => [c, count(c)]).sort((a, b) => b[1] - a[1])[0][0];
+  const headers = splitCSVLine(lines[0], sep);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) rows.push(splitCSVLine(lines[i], sep));
+  return { headers, rows };
+}
+
+function detectColumns(headers) {
+  const lc = headers.map(h => h.toLowerCase());
+  const find = (pred) => lc.findIndex(pred);
+  let tcol = find(h => /date.?time|timestamp/.test(h));
+  let dcol = -1, tmcol = -1;
+  if (tcol < 0) {
+    dcol = find(h => /^date\b|^date$/.test(h));
+    tmcol = find(h => /^time\b|^time$/.test(h));
+    if (dcol >= 0 && tmcol >= 0 && dcol !== tmcol) tcol = dcol; else { tmcol = -1; tcol = find(h => /date|time/.test(h)); }
+  }
+  if (tcol < 0) tcol = 0;
+  let vcol = find(h => /temp|rtd|pt100|pt-100|deg|°c|\bt\b/.test(h) && !/time/.test(h));
+  if (vcol < 0 || vcol === tcol) vcol = headers.findIndex((_, i) => i !== tcol && i !== tmcol);
+  return { tcol, tmcol, vcol };
+}
+
+// Build sorted [{t, temp}] from a table and chosen columns. tmcol = -1 if date+time are one column.
+function buildRTD(table, tcol, tmcol, vcol, naiveOffsetH, dmy) {
+  const out = [];
+  for (const r of table.rows) {
+    const ts = tmcol >= 0 ? (r[tcol] + ' ' + r[tmcol]) : r[tcol];
+    const t = parseTimestamp(ts, naiveOffsetH, dmy);
+    const v = parseFloat(String(r[vcol] == null ? '' : r[vcol]).replace(',', '.'));
+    if (!isNaN(t) && isFinite(v)) out.push({ t, temp: v });
+  }
+  out.sort((a, b) => a.t - b.t);
+  return out;
+}
+
+// nearest reading in time (binary search). Returns {temp, dt} (dt in seconds), or null if empty.
+function nearestRTD(rows, t) {
+  if (!rows || !rows.length) return null;
+  let lo = 0, hi = rows.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (rows[mid].t <= t) lo = mid; else hi = mid; }
+  const a = rows[lo], b = rows[hi];
+  const best = Math.abs(a.t - t) <= Math.abs(b.t - t) ? a : b;
+  return { temp: best.temp, dt: Math.abs(best.t - t) / 1000 };
+}
+
+function csvEscape(v) {
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+// ==== CORE END ====
+
+// ==================== UI ====================
+const $ = id => document.getElementById(id);
+const state = { zip: null, names: [], firstT: NaN, lastT: NaN, tables: { A: null, B: null }, result: null };
+const base = n => n.split('/').pop();
+const tick = () => new Promise(r => setTimeout(r, 0));
+const fmtUTC = ms => new Date(ms).toISOString().replace('.000Z', 'Z');
+
+$('tzOff').value = String(-new Date().getTimezoneOffset() / 60);
+$('tzHint').textContent = 'Defaulted to this computer’s offset (UTC' + (-new Date().getTimezoneOffset() >= 0 ? '+' : '') + (-new Date().getTimezoneOffset() / 60) + '). Only used for timestamps with no zone of their own (ISO strings ending in Z or +08:00 are taken as written). DTS traces are always handled in UTC.';
+
+window.addEventListener('scroll', () => {
+  ['s1', 's2', 's3', 's4'].forEach((id, i) => {
+    const el = $(id), nav = $('nav' + (i + 1));
+    if (!el || !nav) return;
+    const r = el.getBoundingClientRect();
+    r.top <= 120 && r.bottom > 120 ? nav.classList.add('active') : nav.classList.remove('active');
+  });
+});
+
+function log(id, msg, cls = '') {
+  const e = $(id); e.style.display = 'block';
+  const p = document.createElement('p'); p.className = cls; p.textContent = msg; e.appendChild(p);
+  e.scrollTop = e.scrollHeight;
+}
+function pb(id, pct) { $(id).style.width = pct + '%'; }
+function dlBlob(name, parts, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(parts, { type: mime }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+const ICON_ERR = '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"/><line x1="5" y1="5" x2="11" y2="11"/><line x1="11" y1="5" x2="5" y2="11"/></svg>';
+const ICON_WARN = '<svg viewBox="0 0 16 16"><path d="M8 2L15 14H1L8 2z"/><line x1="8" y1="7" x2="8" y2="10"/><circle cx="8" cy="12" r=".5" fill="currentColor"/></svg>';
+function showBox(id, icon, text) {
+  const b = $(id); b.style.display = 'flex'; b.innerHTML = icon + '<span></span>'; b.lastChild.textContent = text;
+}
+function hideBoxes() { $('errBox').style.display = 'none'; $('warnBox').style.display = 'none'; }
+function markDone(n) { $('sn' + n).textContent = '✓'; $('sn' + n).className = 'sec-num ok'; $('nn' + n).textContent = '✓'; $('nn' + n).className = 'nav-num done'; }
+
+// ---------- ZIP ----------
+const dz = $('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files[0]) loadZip(e.dataTransfer.files[0]); });
+$('zi').addEventListener('change', e => { if (e.target.files[0]) loadZip(e.target.files[0]); });
+
+async function loadZip(file) {
+  $('lg1').innerHTML = '';
+  log('lg1', 'Loading ' + file.name + ' (' + (file.size / 1048576).toFixed(1) + ' MB)', 'dim');
+  pb('pb1', 15);
+  try {
+    const zip = await JSZip.loadAsync(file);
+    pb('pb1', 60);
+    const names = Object.keys(zip.files)
+      .filter(n => !zip.files[n].dir && /\.xml$/i.test(n) && !/(^|\/)(__MACOSX|\._)/.test(n))
+      .sort((a, b) => { const x = base(a), y = base(b); return x < y ? -1 : x > y ? 1 : 0; });
+    if (!names.length) { log('lg1', 'No .xml files found in the ZIP', 'er'); pb('pb1', 0); return; }
+    log('lg1', 'Found ' + names.length + ' XML trace files', 'hl');
+
+    const tree = $('ftree'); tree.style.display = 'block'; tree.innerHTML = '';
+    const dirs = [...new Set(names.map(p => p.includes('/') ? p.split('/').slice(0, -1).join('/') : '(root)'))];
+    dirs.slice(0, 6).forEach(d => { const p = document.createElement('p'); p.className = 'ft-dir'; p.textContent = '📁 ' + d; tree.appendChild(p); });
+    names.slice(0, 6).forEach(f => { const p = document.createElement('p'); p.className = 'ft-xml'; p.textContent = '↳ ' + base(f); tree.appendChild(p); });
+    if (names.length > 6) { const p = document.createElement('p'); p.className = 'ft-more'; p.textContent = '... and ' + (names.length - 6) + ' more'; tree.appendChild(p); }
+
+    const first = parseWitsml(await zip.files[names[0]].async('string'));
+    const last = names.length > 1 ? parseWitsml(await zip.files[names[names.length - 1]].async('string')) : first;
+    let tA = parseTimestamp(first.startISO, 0, true); if (isNaN(tA)) tA = parseCompactName(names[0]);
+    let tB = parseTimestamp(last.startISO, 0, true); if (isNaN(tB)) tB = parseCompactName(names[names.length - 1]);
+    state.firstT = Math.min(tA, tB); state.lastT = Math.max(tA, tB);
+    const n = first.laf.length, step = (first.laf[n - 1] - first.laf[0]) / (n - 1);
+    log('lg1', 'LAF ' + first.laf[0].toFixed(1) + ' to ' + first.laf[n - 1].toFixed(1) + ' m, ' + n + ' points, step ' + step.toFixed(3) + ' m', 'dim');
+    log('lg1', 'First file ' + first.startISO + '   last file ' + last.startISO, 'dim');
+    log('lg1', 'Instrument probes (first trace): probe 1 ' + first.probe1 + ' °C, probe 2 ' + first.probe2 + ' °C', 'dim');
+    if (isFinite(first.intRefStart)) log('lg1', 'Instrument internal reference section: ' + first.intRefStart + ' to ' + first.intRefStop + ' m (choose your own sections in step 2)', 'dim');
+    if (first.doubleEnded) log('lg1', 'Files are flagged double-ended; only the forward Stokes / anti-Stokes are used here', 'dim');
+    if (isFinite(first.gamma)) { $('gamma').value = first.gamma; log('lg1', 'γ = ' + first.gamma + ' K read from the XML', 'dim'); }
+
+    state.zip = zip; state.names = names; state.result = null;
+    pb('pb1', 100);
+    log('lg1', names.length + ' traces ready', 'ok');
+    dz.classList.add('loaded');
+    dz.innerHTML = '<div class="drop-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#4ade80" stroke-width="1.5" width="24" height="24"><polyline points="3,10 8,15 17,5"/></svg></div><div class="drop-label"><b></b></div><div class="drop-hint"></div>';
+    dz.querySelector('b').textContent = file.name;
+    dz.querySelector('.drop-hint').textContent = names.length + ' XML traces found';
+    $('filecount').textContent = names.length + ' files';
+    markDone(1); $('sn2').className = 'sec-num on';
+    refreshRTD('A'); refreshRTD('B'); checkReady();
+  } catch (err) { log('lg1', 'Could not read this ZIP: ' + err.message, 'er'); pb('pb1', 0); }
+}
+
+// ---------- reference source UI ----------
+function updateSourceUI() {
+  const a = $('srcA').value, b = $('srcB').value;
+  $('rtdBoxA').style.display = a === 'rtd' ? '' : 'none';
+  $('fixBoxA').style.display = a === 'fixed' ? '' : 'none';
+  $('rtdBoxB').style.display = b === 'rtd' ? '' : 'none';
+  $('fixBoxB').style.display = b === 'fixed' ? '' : 'none';
+  $('rangeB').style.display = b === 'off' ? 'none' : '';
+  $('fitAlpha').disabled = b === 'off';
+  if (b === 'off') $('fitAlpha').checked = false;
+  $('colMapCard').style.display = (a === 'rtd' && state.tables.A) || (b === 'rtd' && state.tables.B) ? '' : 'none';
+  $('aMapRow').style.display = a === 'rtd' && state.tables.A ? '' : 'none';
+  $('bMapRow').style.display = b === 'rtd' && state.tables.B ? '' : 'none';
+  $('statusA').style.display = a === 'rtd' ? '' : 'none';
+  $('statusB').style.display = b === 'rtd' ? '' : 'none';
+  checkReady();
+}
+['srcA', 'srcB'].forEach(id => $(id).addEventListener('change', updateSourceUI));
+['fixA', 'fixB', 'aS', 'aE', 'bS', 'bE', 'gamma', 'dalpha'].forEach(id => $(id).addEventListener('input', checkReady));
+['aDateCol', 'aTimeCol', 'aTempCol', 'tzOff', 'dmy'].forEach(id => $(id).addEventListener('change', () => refreshRTD('A')));
+['bDateCol', 'bTimeCol', 'bTempCol', 'tzOff', 'dmy'].forEach(id => $(id).addEventListener('change', () => refreshRTD('B')));
+
+// ---------- RTD CSV ----------
+function setupRTDDrop(dropId, inputId, which) {
+  const d = $(dropId), inp = $(inputId);
+  d.addEventListener('dragover', e => { e.preventDefault(); d.classList.add('over'); });
+  d.addEventListener('dragleave', () => d.classList.remove('over'));
+  d.addEventListener('drop', e => { e.preventDefault(); d.classList.remove('over'); if (e.dataTransfer.files[0]) loadRTD(e.dataTransfer.files[0], which); });
+  inp.addEventListener('change', e => { if (e.target.files[0]) loadRTD(e.target.files[0], which); });
+}
+setupRTDDrop('dzA', 'csvA', 'A');
+setupRTDDrop('dzB', 'csvB', 'B');
+
+function loadRTD(file, which) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const status = $('status' + which);
+    const table = readTable(e.target.result);
+    if (!table) { status.className = 'rtd-status er'; status.textContent = 'Could not read this file as a table (need a header row and at least one data row).'; return; }
+    const cols = detectColumns(table.headers);
+    state.tables[which] = { table, name: file.name };
+    const lw = which.toLowerCase();
+    const fill = (id, withNone, sel) => {
+      const s = $(id); s.innerHTML = '';
+      if (withNone) { const o = document.createElement('option'); o.value = '-1'; o.textContent = '(none — date and time are in one column)'; s.appendChild(o); }
+      table.headers.forEach((h, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = h || '(column ' + (i + 1) + ')'; s.appendChild(o); });
+      s.value = String(sel);
+    };
+    fill(lw + 'DateCol', false, cols.tcol); fill(lw + 'TimeCol', true, cols.tmcol); fill(lw + 'TempCol', false, cols.vcol);
+    const d = $('dz' + which);
+    d.classList.add('loaded');
+    d.innerHTML = '<div class="drop-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#4ade80" stroke-width="1.5" width="20" height="20"><polyline points="3,10 8,15 17,5"/></svg></div><div class="drop-label" style="font-size:12px"><b></b></div><div class="drop-hint">click to replace</div>';
+    d.querySelector('b').textContent = file.name;
+    updateSourceUI(); refreshRTD(which);
+  };
+  reader.readAsText(file);
+}
+
+function rtdRows(which) {
+  const t = state.tables[which]; if (!t) return null;
+  const lw = which.toLowerCase();
+  return buildRTD(t.table, +$(lw + 'DateCol').value, +$(lw + 'TimeCol').value, +$(lw + 'TempCol').value, parseFloat($('tzOff').value) || 0, $('dmy').value === '1');
+}
+
+function refreshRTD(which) {
+  const status = $('status' + which), t = state.tables[which];
+  if (!t) { status.className = 'rtd-status'; status.textContent = ''; checkReady(); return; }
+  const rows = rtdRows(which);
+  if (!rows.length) {
+    status.className = 'rtd-status er';
+    status.textContent = 'No readings could be parsed (' + t.table.rows.length + ' rows). Check the date and temperature columns, and the date order.';
+  } else {
+    const t0 = rows[0].t, t1 = rows[rows.length - 1].t;
+    let msg = '✓ ' + rows.length + ' readings, ' + fmtUTC(t0) + ' to ' + fmtUTC(t1) + ' (UTC)';
+    let cls = 'rtd-status ok';
+    if (!isNaN(state.firstT) && (t1 < state.firstT || t0 > state.lastT)) {
+      cls = 'rtd-status er';
+      msg += '. These do not overlap the DTS traces (' + fmtUTC(state.firstT) + ' to ' + fmtUTC(state.lastT) + '). Check the UTC offset and the date order.';
+    }
+    status.className = cls; status.textContent = msg;
+  }
+  checkReady();
+}
+
+// ---------- readiness ----------
+function checkReady() {
+  let why = '';
+  if (!state.zip) why = 'Upload a ZIP of XML traces to begin.';
+  else {
+    const a = $('srcA').value, b = $('srcB').value;
+    if (a === 'rtd' && !(state.tables.A && rtdRows('A').length)) why = 'Section A: upload an RTD CSV, or choose another temperature source.';
+    else if (a === 'fixed' && !isFinite(parseFloat($('fixA').value))) why = 'Section A: enter a fixed temperature.';
+    else if (b === 'rtd' && !(state.tables.B && rtdRows('B').length)) why = 'Section B: upload an RTD CSV, or set it to Not used.';
+    else if (b === 'fixed' && !isFinite(parseFloat($('fixB').value))) why = 'Section B: enter a fixed temperature.';
+    else if (!(parseFloat($('aS').value) < parseFloat($('aE').value))) why = 'Section A: LAF start must be less than end.';
+    else if (b !== 'off' && !(parseFloat($('bS').value) < parseFloat($('bE').value))) why = 'Section B: LAF start must be less than end.';
+    else if (!(parseFloat($('gamma').value) > 0)) why = 'Enter γ (e.g. 481.5).';
+  }
+  $('runBtn').disabled = !!why;
+  $('readyHint').textContent = why || 'Ready.';
+  if (!why) { $('sn2').className = 'sec-num ok'; $('sn2').textContent = '✓'; $('nn2').className = 'nav-num done'; $('nn2').textContent = '✓'; $('sn3').className = state.result ? 'sec-num ok' : 'sec-num on'; }
+}
+
+function readConfig() {
+  const num = id => parseFloat($(id).value);
+  const lim = (id, d) => { const v = $(id).value.trim(); return v === '' ? d : parseFloat(v); };
+  const cfg = {
+    srcA: $('srcA').value, srcB: $('srcB').value,
+    fixA: num('fixA'), fixB: num('fixB'),
+    aLo: num('aS'), aHi: num('aE'), bLo: num('bS'), bHi: num('bE'),
+    gamma: num('gamma'), dAlpha: num('dalpha'),
+    fitAlpha: $('fitAlpha').checked && $('srcB').value !== 'off',
+    units: $('tu').value, tolSec: $('tol').value === 'Infinity' ? Infinity : num('tol'),
+    clipLo: lim('cs', -Infinity), clipHi: lim('ce', Infinity),
+    dropInvalid: $('dropInvalid').checked, raw: $('incRaw').checked,
+    site: $('si').value.trim() || 'NA', fire: $('fi').value.trim() || 'NA', chan: $('ch').value.trim() || 'NA',
+    minPts: 3
+  };
+  if (!isFinite(cfg.dAlpha)) return { error: 'Enter a value for Δα (0 is allowed).' };
+  if (cfg.clipLo > cfg.clipHi) return { error: 'Clip range: "from" must be less than "to".' };
+  return cfg;
+}
+
+function pickRef(src, tr, t, rtd, cfg, fixed, firstProbe1, label) {
+  if (src === 'rtd') {
+    const n = nearestRTD(rtd, t);
+    if (!n) return { err: 'no RTD data for section ' + label };
+    if (n.dt > cfg.tolSec) return { err: 'no RTD reading within tolerance for section ' + label };
+    return { T: n.temp, dt: n.dt };
+  }
+  let v;
+  if (src === 'probe1') v = tr.probe1; else if (src === 'probe2') v = tr.probe2;
+  else if (src === 'probe1first') v = firstProbe1; else v = fixed;
+  if (!isFinite(v)) return { err: 'temperature for section ' + label + ' not available (' + src + ')' };
+  return { T: v, dt: 0 };
+}
+
+// ---------- run ----------
+async function runCal() {
+  hideBoxes();
+  const cfg = readConfig();
+  if (cfg.error) { showBox('errBox', ICON_ERR, cfg.error); return; }
+  $('runBtn').disabled = true;
+  const rtdA = cfg.srcA === 'rtd' ? rtdRows('A') : null;
+  const rtdB = cfg.srcB === 'rtd' ? rtdRows('B') : null;
+  const names = state.names, total = names.length;
+  const chunks = [], params = [], skips = {};
+  const skip = k => { k = k.replace(/\d+(\.\d+)?/g, 'N'); skips[k] = (skips[k] || 0) + 1; };
+  const preview = [];
+  let rows = 0, tmin = Infinity, tmax = -Infinity, firstProbe1 = NaN;
+  const t0 = performance.now();
+  pb('pb4', 0);
+
+  for (let i = 0; i < total; i++) {
+    const name = names[i];
+    let tr;
+    try { tr = parseWitsml(await state.zip.files[name].async('string')); }
+    catch (e) { skip('unreadable XML (' + e.message + ')'); continue; }
+    if (i === 0) firstProbe1 = tr.probe1;
+    let t = parseTimestamp(tr.startISO, 0, true);
+    if (isNaN(t)) t = parseCompactName(name);
+    if (isNaN(t)) { skip('no timestamp'); continue; }
+
+    const ra = pickRef(cfg.srcA, tr, t, rtdA, cfg, cfg.fixA, firstProbe1, 'A');
+    if (ra.err) { skip(ra.err); continue; }
+    let rb = { T: null, dt: NaN };
+    if (cfg.srcB !== 'off') { rb = pickRef(cfg.srcB, tr, t, rtdB, cfg, cfg.fixB, firstProbe1, 'B'); if (rb.err) { skip(rb.err); continue; } }
+
+    const y = logRatio(tr.st, tr.ast);
+    const cal = calibrateTrace(tr.laf, y, cfg, ra.T, rb.T);
+    if (cal.error) { skip(cal.error); continue; }
+
+    const iso = new Date(t).toISOString();
+    const prefix = csvEscape(cfg.site) + ',' + csvEscape(cfg.fire) + ',' + csvEscape(cfg.chan) + ',' + iso + ',';
+    const lines = [];
+    for (let k = 0; k < tr.laf.length; k++) {
+      const z = tr.laf[k];
+      if (z < cfg.clipLo || z > cfg.clipHi) continue;
+      const TK = tempK(y[k], z, cal.C, cal.dAlpha, cfg.gamma);
+      const bad = isNaN(TK);
+      if (bad && cfg.dropInvalid) continue;
+      const T = bad ? NaN : (cfg.units === 'K' ? TK : TK - KELVIN);
+      lines.push(prefix + z.toFixed(3) + (cfg.raw ? ',' + tr.st[k] + ',' + tr.ast[k] : '') + ',' + (bad ? 'NA' : T.toFixed(3)));
+      rows++;
+      if (!bad) { if (T < tmin) tmin = T; if (T > tmax) tmax = T; }
+      if (preview.length < 10) preview.push({ site_id: cfg.site, fire_id: cfg.fire, channel: cfg.chan, datetime_utc: iso, laf_m: z.toFixed(3), st: tr.st[k], ast: tr.ast[k], temp_cal: bad ? 'NA' : T.toFixed(3) });
+    }
+    if (lines.length) chunks.push({ t, s: lines.join('\n') + '\n' });
+    params.push({ t, datetime_utc: iso, file: base(name), ref_a_c: ra.T, ref_a_dt_s: ra.dt, ref_b_c: rb.T, cal_c: cal.C, d_alpha: cal.dAlpha, gamma: cfg.gamma, probe1_c: tr.probe1, probe2_c: tr.probe2 });
+
+    if (i % 10 === 0 || i === total - 1) { pb('pb4', Math.round((i + 1) / total * 100)); $('readyHint').textContent = 'Processing ' + (i + 1) + ' / ' + total + '...'; await tick(); }
+  }
+  pb('pb4', 100);
+  $('readyHint').textContent = 'Done in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.';
+  $('runBtn').disabled = false;
+
+  const skipped = Object.entries(skips).sort((a, b) => b[1] - a[1]);
+  if (!chunks.length) {
+    showBox('errBox', ICON_ERR, 'No rows were produced.' + (skipped.length ? ' Reasons: ' + skipped.map(([k, v]) => k + ' (×' + v + ')').join('; ') + '.' : ' Check the clip range and the reference LAF ranges.'));
+    return;
+  }
+  state.result = { cfg, chunks, params, rows, tmin, tmax, preview, skipped, total };
+  markDone(3); markDone(4);
+  renderPreview();
+}
+
+function renderPreview() {
+  const r = state.result, cfg = r.cfg, unit = cfg.units === 'K' ? 'K' : '°C';
+  $('rowcount').textContent = r.rows.toLocaleString() + ' rows';
+  const nOk = r.params.length;
+  const stats = [
+    { l: 'Rows', v: r.rows.toLocaleString(), c: '' },
+    { l: 'Traces calibrated', v: nOk.toLocaleString() + ' / ' + r.total.toLocaleString(), c: 'blue' },
+    { l: 'Min (' + unit + ')', v: isFinite(r.tmin) ? r.tmin.toFixed(2) : 'NA', c: 'green' },
+    { l: 'Max (' + unit + ')', v: isFinite(r.tmax) ? r.tmax.toFixed(2) : 'NA', c: 'amber' }
+  ];
+  $('statsRow').innerHTML = stats.map(s => '<div class="stat"><div class="stat-label">' + s.l + '</div><div class="stat-val ' + s.c + '">' + s.v + '</div></div>').join('');
+
+  const fmt = (v, d) => (v == null || (typeof v === 'number' && !isFinite(v))) ? 'NA' : (typeof v === 'number' ? v.toFixed(d) : v);
+  const qc = [['datetime_utc', p => p.datetime_utc], ['ref_a_c', p => fmt(p.ref_a_c, 3)], ['ref_a_dt_s', p => fmt(p.ref_a_dt_s, 1)], ['ref_b_c', p => fmt(p.ref_b_c, 3)], ['cal_c', p => fmt(p.cal_c, 5)], ['d_alpha', p => p.d_alpha.toExponential(4)], ['probe1_c', p => fmt(p.probe1_c, 3)], ['probe2_c', p => fmt(p.probe2_c, 3)]];
+  $('qcTbl').innerHTML = '<tr>' + qc.map(c => '<th>' + c[0] + '</th>').join('') + '</tr>' +
+    r.params.slice(0, 5).map(p => '<tr>' + qc.map((c, i) => '<td class="' + (i === 4 ? 'cal' : i === 1 || i === 3 ? 'rtd' : '') + '">' + c[1](p) + '</td>').join('') + '</tr>').join('');
+
+  const cols = ['site_id', 'fire_id', 'channel', 'datetime_utc', 'laf_m'].concat(cfg.raw ? ['st', 'ast'] : [], ['temp_cal']);
+  $('pvTbl').innerHTML = '<tr>' + cols.map(c => '<th>' + c + '</th>').join('') + '</tr>' +
+    r.preview.map(p => '<tr>' + cols.map(c => '<td class="' + (c === 'temp_cal' ? 'cal' : '') + '">' + p[c] + '</td>').join('') + '</tr>').join('');
+  $('pvSec').style.display = 'block'; $('pvEmpty').style.display = 'none';
+
+  const msgs = [];
+  if (r.skipped.length) {
+    const nSk = r.skipped.reduce((s, x) => s + x[1], 0);
+    msgs.push(nSk + ' of ' + r.total + ' traces skipped: ' + r.skipped.map(([k, v]) => k + ' (×' + v + ')').join('; ') + '.');
+  }
+  if (isFinite(r.tmax) && (r.tmax > 1200 + (cfg.units === 'K' ? KELVIN : 0) || r.tmin < -60 + (cfg.units === 'K' ? KELVIN : 0))) {
+    msgs.push('Some temperatures are outside a plausible range (' + r.tmin.toFixed(0) + ' to ' + r.tmax.toFixed(0) + ' ' + unit + '). These are usually noise past the fibre end: set the clip range in step 3.');
+  }
+  if (msgs.length) showBox('warnBox', ICON_WARN, msgs.join(' '));
+  $('s4').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---------- exports ----------
+function longHeader(cfg) { return ['site_id', 'fire_id', 'channel', 'datetime_utc', 'laf_m'].concat(cfg.raw ? ['st', 'ast'] : [], ['temp_cal']).join(',') + '\n'; }
+function doExportCSV() {
+  const r = state.result; if (!r) return;
+  const parts = [longHeader(r.cfg)].concat(r.chunks.slice().sort((a, b) => a.t - b.t).map(c => c.s));
+  dlBlob('dts_calibrated_long.csv', parts, 'text/csv');
+}
+function doExportParams() {
+  const r = state.result; if (!r) return;
+  const f = (v, d) => (v == null || !isFinite(v)) ? 'NA' : (d == null ? String(v) : v.toFixed(d));
+  const lines = ['datetime_utc,file,ref_a_c,ref_a_dt_s,ref_b_c,cal_c,d_alpha,gamma,probe1_c,probe2_c'];
+  r.params.slice().sort((a, b) => a.t - b.t).forEach(p => lines.push([p.datetime_utc, csvEscape(p.file), f(p.ref_a_c, 4), f(p.ref_a_dt_s, 1), f(p.ref_b_c, 4), f(p.cal_c, 6), p.d_alpha.toExponential(6), f(p.gamma), f(p.probe1_c, 4), f(p.probe2_c, 4)].join(',')));
+  dlBlob('dts_trace_parameters.csv', [lines.join('\n') + '\n'], 'text/csv');
+}
+
+function doExportR() {
+  const r = state.result; if (!r) return;
+  const cfg = r.cfg, unit = cfg.units === 'K' ? 'K' : '\\u00b0C';
+  let tz = 'UTC'; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { }
+  const thr = cfg.units === 'K' ? '333.15, 373.15' : '60, 100';
+  const script =
+`# -------------------------------------------------------------------
+# DTS post-processing starter script   (generated by DTScal)
+# Site: ${cfg.site}   Fire: ${cfg.fire}   Channel: ${cfg.chan}
+# Calibration: single-ended, Stokes / anti-Stokes ratio, one reference
+# section per trace.  Temperatures in ${cfg.units === 'K' ? 'kelvin' : 'degrees C'}.
+# -------------------------------------------------------------------
+library(tidyverse)
+library(lubridate)
+
+tz_local <- "${tz}"   # time zone to work in (data are stored in UTC)
+
+# 1. Load ------------------------------------------------------------
+dts <- read_csv("dts_calibrated_long.csv",
+  col_types = cols(site_id = col_character(), fire_id = col_character(),
+                   channel = col_character(), datetime_utc = col_character(),
+                   .default = col_double())) |>
+  mutate(datetime = with_tz(ymd_hms(datetime_utc, tz = "UTC"), tz_local))
+
+trace <- read_csv("dts_trace_parameters.csv",
+  col_types = cols(datetime_utc = col_character(), file = col_character(),
+                   .default = col_double())) |>
+  mutate(datetime = with_tz(ymd_hms(datetime_utc, tz = "UTC"), tz_local))
+
+cat("Traces:", nrow(trace), "\\n")
+cat("Time:  ", format(min(dts$datetime)), "to", format(max(dts$datetime)), "\\n")
+cat("LAF:   ", min(dts$laf_m), "to", max(dts$laf_m), "m\\n")
+cat("Temp:  ", round(min(dts$temp_cal, na.rm = TRUE), 1), "to",
+               round(max(dts$temp_cal, na.rm = TRUE), 1), "${unit}\\n")
+
+# 2. Calibration QC: reference temperature and fitted constants ------
+trace |>
+  select(datetime, ref_a_c, ref_b_c, probe1_c, probe2_c) |>
+  pivot_longer(-datetime, values_drop_na = TRUE) |>
+  ggplot(aes(datetime, value, colour = name)) +
+  geom_line() +
+  labs(title = "Reference and instrument probe temperatures",
+       x = NULL, y = "Temperature (\\u00b0C)", colour = NULL) +
+  theme_minimal()
+
+trace |>
+  select(datetime, cal_c, d_alpha) |>
+  pivot_longer(-datetime) |>
+  ggplot(aes(datetime, value)) +
+  geom_line() +
+  facet_wrap(~name, scales = "free_y", ncol = 1) +
+  labs(title = "Per-trace calibration constants", x = NULL, y = NULL) +
+  theme_minimal()
+
+# 3. Time x position heatmap -----------------------------------------
+dts |>
+  ggplot(aes(datetime, laf_m, fill = temp_cal)) +
+  geom_raster() +
+  scale_fill_viridis_c(option = "inferno", name = "${unit}") +
+  scale_y_reverse() +
+  labs(title = "Calibrated DTS temperature", x = NULL, y = "Length along fibre (m)") +
+  theme_minimal()
+
+# 4. One position through time (edit laf_target) ----------------------
+laf_target <- 100      # m along fibre
+half_win   <- 0.13     # m, about half the sampling step
+
+dts |>
+  filter(abs(laf_m - laf_target) <= half_win) |>
+  ggplot(aes(datetime, temp_cal)) +
+  geom_line() +
+  labs(title = paste0("Temperature at LAF = ", laf_target, " m"),
+       x = NULL, y = "Temperature (${unit})") +
+  theme_minimal()
+
+# 5. Min / mean / max along the fibre --------------------------------
+dts |>
+  group_by(laf_m) |>
+  summarise(min = min(temp_cal, na.rm = TRUE), mean = mean(temp_cal, na.rm = TRUE),
+            max = max(temp_cal, na.rm = TRUE), .groups = "drop") |>
+  pivot_longer(-laf_m) |>
+  ggplot(aes(laf_m, value, colour = name)) +
+  geom_line() +
+  labs(x = "Length along fibre (m)", y = "Temperature (${unit})", colour = NULL) +
+  theme_minimal()
+
+# 6. Time above thresholds, per position (minutes) -------------------
+thresholds <- c(${thr})   # same units as temp_cal
+dt_s <- trace |> arrange(datetime) |>
+  mutate(d = as.numeric(difftime(datetime, lag(datetime), units = "secs"))) |>
+  pull(d) |> median(na.rm = TRUE)
+
+time_over <- map_dfr(thresholds, \\(th)
+  dts |> group_by(laf_m) |>
+    summarise(minutes = sum(temp_cal > th, na.rm = TRUE) * dt_s / 60, .groups = "drop") |>
+    mutate(threshold = factor(th)))
+
+ggplot(time_over, aes(laf_m, minutes, colour = threshold)) +
+  geom_line() +
+  labs(x = "Length along fibre (m)", y = "Time above threshold (min)") +
+  theme_minimal()
+`;
+  dlBlob('dts_import.R', [script], 'text/plain');
+}
+
+function doExportReadme() {
+  const r = state.result; if (!r) return;
+  const cfg = r.cfg;
+  const srcName = { rtd: 'RTD CSV, nearest timestamp (max offset ' + (cfg.tolSec === Infinity ? 'none' : cfg.tolSec + ' s') + ')', probe1: 'instrument probe 1 from each XML', probe1first: 'instrument probe 1 from the first trace only', probe2: 'instrument probe 2 from each XML', fixed: 'fixed value', off: 'not used' };
+  const txt =
+`DTS calibration output
+Generated : ${new Date().toISOString()}
+Tool      : DTScal (runs in the browser; nothing was uploaded)
+
+DEPLOYMENT
+Site / fire / channel : ${cfg.site} / ${cfg.fire} / ${cfg.chan}
+Traces calibrated     : ${r.params.length} of ${r.total}
+Rows written          : ${r.rows}
+
+METHOD  (single-ended, Stokes / anti-Stokes, same model as calibrate.m and DTS.m)
+  T(z) = gamma / ( ln(Stokes/antiStokes) + C - dAlpha * z )      [kelvin]
+  C is solved for every trace so that section A reads its reference temperature.
+Section A  : LAF ${cfg.aLo} to ${cfg.aHi} m, temperature from ${srcName[cfg.srcA]}${cfg.srcA === 'fixed' ? ' (' + cfg.fixA + ' C)' : ''}
+Section B  : ${cfg.srcB === 'off' ? 'not used' : 'LAF ' + cfg.bLo + ' to ' + cfg.bHi + ' m, temperature from ' + srcName[cfg.srcB]}
+gamma      : ${cfg.gamma} K
+dAlpha     : ${cfg.fitAlpha ? 'solved per trace from sections A and B (see d_alpha in dts_trace_parameters.csv)' : cfg.dAlpha + ' 1/m (fixed)'}
+Units      : ${cfg.units === 'K' ? 'kelvin' : 'degrees C'}
+Clip       : LAF ${isFinite(cfg.clipLo) ? cfg.clipLo : 'no lower limit'} to ${isFinite(cfg.clipHi) ? cfg.clipHi : 'no upper limit'} m
+Invalid    : ${cfg.dropInvalid ? 'points with Stokes or anti-Stokes <= 0 were left out' : 'points with Stokes or anti-Stokes <= 0 are written as NA'}
+Only the forward Stokes / anti-Stokes channels are used.
+
+FILES
+dts_calibrated_long.csv     one row per trace x position
+  site_id, fire_id, channel
+  datetime_utc   start time of the trace, ISO 8601 UTC
+  laf_m          length along fibre (m)${cfg.raw ? '\n  st, ast        raw Stokes and anti-Stokes intensity' : ''}
+  temp_cal       calibrated temperature
+dts_trace_parameters.csv    one row per trace
+  ref_a_c / ref_b_c   reference temperature used (C)
+  ref_a_dt_s          seconds between the trace and the RTD reading used (0 if not RTD)
+  cal_c               solved constant C
+  d_alpha, gamma      values used
+  probe1_c, probe2_c  instrument probe temperatures stored in the XML
+dts_import.R                starter script (tidyverse + lubridate)
+`;
+  dlBlob('README.txt', [txt], 'text/plain');
+}
+
+updateSourceUI();
+</script>
+</body>
+</html>
+
 <style>
 :root {
   --bg:#0d0f0e;--bg2:#131614;--bg3:#191c1a;
